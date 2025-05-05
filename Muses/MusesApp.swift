@@ -13,6 +13,9 @@ struct MusesApp: App {
         WindowGroup {
             ContentView()
         }
+        Settings {
+            SettingsView()
+        }
     }
 }
 

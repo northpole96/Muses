@@ -2,6 +2,7 @@ import SwiftUI
 import MetalKit
 import AppKit // Import AppKit for NSWindow
 import simd // Import simd for float2 etc.
+import Combine // Import Combine for Binding
 
 // Swift-side struct mirroring the Metal Uniforms struct
 struct Uniforms {
@@ -9,33 +10,74 @@ struct Uniforms {
     var resolution: float2
 }
 
+// --- Settings View ---
+struct ShaderSettingsView: View {
+    @Binding var showFPS: Bool
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("Display Settings")
+                .font(.title2)
+                .padding(.bottom)
+
+            Toggle("Show FPS Counter", isOn: $showFPS)
+
+            Spacer()
+
+            HStack {
+                Spacer()
+                Button("Done") {
+                    dismiss()
+                }
+            }
+        }
+        .padding()
+        .frame(minWidth: 250, minHeight: 150)
+    }
+}
+
+// --- Shader Preview View ---
 struct ShaderPreviewView: View {
     let shader: Shader
     @Binding var selectedShader: Shader?
     
-    var body: some View {
-        ZStack {
-            MetalView(shaderName: shader.shaderName)
-                .edgesIgnoringSafeArea(.all)
-            
-            VStack {
-                HStack {
-                    Button(action: {
-                        selectedShader = nil
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.title)
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(Color.black.opacity(0.5))
-                            .clipShape(Circle())
-                    }
-                    .padding(.leading)
+    // State for FPS display (value comes from MetalView's Coordinator)
+    @State private var fps: Double = 0.0
+    // Read showFPS setting from AppStorage
+    @AppStorage("showFPS") var showFPS: Bool = true
 
-                    Spacer()
+    var body: some View {
+        ZStack(alignment: .topLeading) { // Align controls to topLeading
+            // Ensure the fps binding ($fps) is passed to MetalView
+            MetalView(shaderName: shader.shaderName, fps: $fps)
+                .edgesIgnoringSafeArea(.all)
+
+            // Control Buttons (Back)
+            HStack {
+                // Updated Back Button
+                Button { selectedShader = nil } label: {
+                    Label("Back", systemImage: "chevron.left")
+                        .labelStyle(.iconOnly)
                 }
-                .padding(.top)
+                .buttonStyle(.borderedProminent)
+                .tint(.black.opacity(0.6))
+                .clipShape(Capsule())
+                .padding([.leading, .top])
+                
                 Spacer()
+            }
+
+            // FPS Counter Display (Top Right) - controlled by AppStorage
+            if showFPS {
+                Text(String(format: "%.1f FPS", fps))
+                    .font(.caption)
+                    .padding(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                    .background(Color.black.opacity(0.6))
+                    .foregroundColor(.white)
+                    .cornerRadius(5)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing) // Align to top trailing
+                    .padding([.trailing, .top])
             }
         }
     }
@@ -43,9 +85,12 @@ struct ShaderPreviewView: View {
 
 struct MetalView: NSViewRepresentable {
     let shaderName: String
-    
+    @Binding var fps: Double
+    // Read preferred FPS from AppStorage (now a Double)
+    @AppStorage("preferredFPS") var preferredFPS: Double = 75.0
+
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        Coordinator(self, fpsBinding: $fps)
     }
     
     func makeNSView(context: Context) -> MTKView {
@@ -57,14 +102,19 @@ struct MetalView: NSViewRepresentable {
         mtkView.drawableSize = mtkView.frame.size
         mtkView.enableSetNeedsDisplay = true
         mtkView.isPaused = false
-        mtkView.preferredFramesPerSecond = 60
+        // Use preferredFPS from AppStorage, casting to Int
+        mtkView.preferredFramesPerSecond = Int(preferredFPS)
         
         context.coordinator.setupMetal(mtkView: mtkView)
         return mtkView
     }
     
     func updateNSView(_ nsView: MTKView, context: Context) {
-        // Update if needed
+        // Update preferred frame rate if the setting changes, casting to Int
+        let targetFPS = Int(preferredFPS)
+        if nsView.preferredFramesPerSecond != targetFPS {
+             nsView.preferredFramesPerSecond = targetFPS
+        }
     }
     
     class Coordinator: NSObject, MTKViewDelegate {
@@ -76,9 +126,19 @@ struct MetalView: NSViewRepresentable {
         var uniformsBuffer: MTLBuffer!
         var uniforms = Uniforms(time: 0, resolution: float2(0,0))
         
-        init(_ parent: MetalView) {
+        // FPS Calculation properties
+        var fpsBinding: Binding<Double>
+        var lastTime: CFTimeInterval = 0.0
+        var frameCount: Int = 0
+        let fpsUpdateInterval: TimeInterval = 0.5 // Update FPS display twice per second
+        var lastFpsUpdateTime: CFTimeInterval = 0.0
+
+        init(_ parent: MetalView, fpsBinding: Binding<Double>) {
             self.parent = parent
+            self.fpsBinding = fpsBinding
             super.init()
+            self.lastTime = CACurrentMediaTime() // Initialize lastTime
+            self.lastFpsUpdateTime = self.lastTime
         }
         
         func setupMetal(mtkView: MTKView) {
@@ -142,6 +202,24 @@ struct MetalView: NSViewRepresentable {
         }
         
         func draw(in view: MTKView) {
+            let currentTime = CACurrentMediaTime()
+            let deltaTime = currentTime - lastTime
+            lastTime = currentTime
+            
+            frameCount += 1
+            let timeSinceLastFpsUpdate = currentTime - lastFpsUpdateTime
+            
+            // Update FPS calculation periodically
+            if timeSinceLastFpsUpdate >= fpsUpdateInterval {
+                let currentFps = Double(frameCount) / timeSinceLastFpsUpdate
+                // Update the binding on the main thread
+                DispatchQueue.main.async {
+                    self.fpsBinding.wrappedValue = currentFps
+                }
+                frameCount = 0
+                lastFpsUpdateTime = currentTime
+            }
+
             guard let drawable = view.currentDrawable,
                   let commandBuffer = commandQueue.makeCommandBuffer(),
                   let renderPassDescriptor = view.currentRenderPassDescriptor,
