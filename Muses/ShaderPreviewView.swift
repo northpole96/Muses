@@ -4,7 +4,7 @@ import AppKit // Import AppKit for NSWindow
 
 struct ShaderPreviewView: View {
     let shader: Shader
-    @Environment(\.presentationMode) var presentationMode
+    @Binding var selectedShader: Shader?
     
     var body: some View {
         ZStack {
@@ -14,7 +14,7 @@ struct ShaderPreviewView: View {
             VStack {
                 HStack {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        selectedShader = nil
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title)
@@ -26,32 +26,10 @@ struct ShaderPreviewView: View {
                     .padding(.leading)
 
                     Spacer()
-
-                    Button(action: {
-                        toggleFullScreen()
-                    }) {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.title)
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(Color.black.opacity(0.5))
-                            .clipShape(Circle())
-                    }
-                    .padding(.trailing)
-
                 }
                 .padding(.top)
                 Spacer()
             }
-        }
-        .onExitCommand {
-            presentationMode.wrappedValue.dismiss()
-        }
-    }
-
-    private func toggleFullScreen() {
-        if let window = NSApplication.shared.windows.first {
-            window.toggleFullScreen(nil)
         }
     }
 }
@@ -103,14 +81,30 @@ struct MetalView: NSViewRepresentable {
                 fatalError("Could not load default Metal library")
             }
             
-            guard let vertexFunction = library.makeFunction(name: "vertexShader"),
-                  let fragmentFunction = library.makeFunction(name: parent.shaderName) else {
-                fatalError("Could not create shader functions from library")
+            // Debug: Print all available functions in the library
+            print("Available Metal functions:")
+            for name in library.functionNames {
+                print("- \(name)")
+            }
+            
+            // Load vertex shader
+            guard let vFunc = library.makeFunction(name: "vertexShader") else {
+                fatalError("vertexShader not found in Metal library")
+            }
+            // Load fragment shader, fallback to debugShader if not found
+            let fFunc: MTLFunction
+            if let frag = library.makeFunction(name: parent.shaderName) {
+                fFunc = frag
+            } else if let debug = library.makeFunction(name: "debugShader") {
+                fFunc = debug
+                print("Falling back to 'debugShader' for missing shader: \(parent.shaderName)")
+            } else {
+                fatalError("Neither \(parent.shaderName) nor 'debugShader' found in Metal library")
             }
             
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
-            pipelineDescriptor.vertexFunction = vertexFunction
-            pipelineDescriptor.fragmentFunction = fragmentFunction
+            pipelineDescriptor.vertexFunction = vFunc
+            pipelineDescriptor.fragmentFunction = fFunc
             pipelineDescriptor.colorAttachments[0].pixelFormat = mtkView.colorPixelFormat
             
             do {

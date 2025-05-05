@@ -1,0 +1,29 @@
+#ifndef Shared_metalh
+#define Shared_metalh
+
+#include <metal_stdlib>
+using namespace metal;
+
+// Shared Structs
+struct VertexIn {
+    float4 position [[attribute(0)]];
+};
+
+struct VertexOut {
+    float4 position [[position]];
+    float2 texCoord;
+};
+
+// Helper function for pseudo-random noise (2D input)
+// Using 'inline' to prevent duplicate symbol errors
+inline float random2D(float2 p) {
+    return metal::fract(metal::sin(metal::dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+// Helper function for pseudo-random noise (1D input)
+// Using 'inline' to prevent duplicate symbol errors
+inline float random1D(float x) {
+    return metal::fract(metal::sin(x)*1e4);
+}
+
+#endif /* Shared_metalh */ 
