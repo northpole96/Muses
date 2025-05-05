@@ -254,7 +254,7 @@ struct MetalView: NSViewRepresentable {
     @State var previewSelectedShader: Shader? = Shader(name: "Test Shader", description: "A test shader.", shaderName: "wavyFunction")
     
     ShaderPreviewView(
-        shader: Shader(name: "Test Shader", description: "A test shader.", shaderName: "wavyFunction"), 
+        shader: Shader(name: "Test Shader", description: "A test shader.", shaderName: "lineBallWaves"), 
         selectedShader: $previewSelectedShader
     )
 }
