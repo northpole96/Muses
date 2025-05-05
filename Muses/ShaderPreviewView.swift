@@ -1,6 +1,13 @@
 import SwiftUI
 import MetalKit
 import AppKit // Import AppKit for NSWindow
+import simd // Import simd for float2 etc.
+
+// Swift-side struct mirroring the Metal Uniforms struct
+struct Uniforms {
+    var time: Float
+    var resolution: float2
+}
 
 struct ShaderPreviewView: View {
     let shader: Shader
@@ -66,7 +73,8 @@ struct MetalView: NSViewRepresentable {
         var commandQueue: MTLCommandQueue!
         var pipelineState: MTLRenderPipelineState!
         var vertexBuffer: MTLBuffer!
-        var time: Float = 0
+        var uniformsBuffer: MTLBuffer!
+        var uniforms = Uniforms(time: 0, resolution: float2(0,0))
         
         init(_ parent: MetalView) {
             self.parent = parent
@@ -123,10 +131,14 @@ struct MetalView: NSViewRepresentable {
             vertexBuffer = device.makeBuffer(bytes: vertices,
                                            length: vertices.count * MemoryLayout<Float>.stride,
                                            options: [])
+            
+            // Create uniforms buffer
+            uniformsBuffer = device.makeBuffer(length: MemoryLayout<Uniforms>.stride, options: [MTLResourceOptions.storageModeShared])
         }
         
         func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-            // Handle resize if needed
+            // Update resolution uniform on size change
+            uniforms.resolution = float2(Float(size.width), Float(size.height))
         }
         
         func draw(in view: MTKView) {
@@ -137,11 +149,17 @@ struct MetalView: NSViewRepresentable {
                 return
             }
             
-            time += 0.016 // Approximately 60 FPS
+            // Update uniforms
+            uniforms.time += 0.016 // Approximately 60 FPS
+            if uniforms.resolution.x == 0 || uniforms.resolution.y == 0 { // Ensure resolution is set initially
+                 uniforms.resolution = float2(Float(view.drawableSize.width), Float(view.drawableSize.height))
+            }
+            memcpy(uniformsBuffer.contents(), &uniforms, MemoryLayout<Uniforms>.stride)
             
             renderEncoder.setRenderPipelineState(pipelineState)
             renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-            renderEncoder.setFragmentBytes(&time, length: MemoryLayout<Float>.stride, index: 0)
+            // Pass uniforms buffer to fragment shader at index 0
+            renderEncoder.setFragmentBuffer(uniformsBuffer, offset: 0, index: 0)
             
             renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
             

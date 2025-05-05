@@ -14,6 +14,12 @@ struct VertexOut {
     float2 texCoord;
 };
 
+// Uniforms structure
+struct Uniforms {
+    float time;
+    float2 resolution;
+};
+
 // Helper function for pseudo-random noise (2D input)
 // Using 'inline' to prevent duplicate symbol errors
 inline float random2D(float2 p) {
