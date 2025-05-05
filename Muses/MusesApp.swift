@@ -11,7 +11,8 @@ import SwiftUI
 struct MusesApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ShaderListView()
         }
     }
 }
+
