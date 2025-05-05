@@ -20,7 +20,7 @@ struct ContentView: View {
         Shader(name: "Plasma Effect", description: "Dynamic plasma effect with color cycling", shaderName: "plasma"),
         Shader(name: "Fractal Explorer", description: "Interactive fractal visualization", shaderName: "fractal"),
         Shader(name: "Wavy Function", description: "Animated sine wave function visualization", shaderName: "wavyFunction"),
-        
+        Shader(name: "Line Ball Waves", description: "Converted ShaderToy effect with lines and balls", shaderName: "lineBallWaves"),
     ]
 
     var body: some View {
