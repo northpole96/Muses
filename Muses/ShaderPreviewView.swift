@@ -247,3 +247,14 @@ struct MetalView: NSViewRepresentable {
         }
     }
 } 
+
+
+#Preview{
+    // Create dummy data for the preview
+    @State var previewSelectedShader: Shader? = Shader(name: "Test Shader", description: "A test shader.", shaderName: "wavyFunction")
+    
+    ShaderPreviewView(
+        shader: Shader(name: "Test Shader", description: "A test shader.", shaderName: "wavyFunction"), 
+        selectedShader: $previewSelectedShader
+    )
+}
