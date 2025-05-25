@@ -23,6 +23,7 @@ struct ContentView: View {
         Shader(name: "Line Ball Waves", description: "Converted ShaderToy effect with lines and balls", shaderName: "lineBallWaves"),
         Shader(name: "Voronoi Wave", description: "Mellow riff on Voronoi Wave with colorful patterns", shaderName: "voronoiWave"),
         Shader(name: "Smooth Voronoi Contours", description: "Smooth numerical gradient contours on 2D Voronoi", shaderName: "smoothVoronoiContours"),
+        Shader(name: "Saturday Torus", description: "Animated torus with black and white stripe patterns", shaderName: "saturdayTorus"),
     ]
 
     var body: some View {
