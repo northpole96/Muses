@@ -25,6 +25,7 @@ struct ContentView: View {
         Shader(name: "Smooth Voronoi Contours", description: "Smooth numerical gradient contours on 2D Voronoi", shaderName: "smoothVoronoiContours"),
         Shader(name: "Saturday Torus", description: "Animated torus with black and white stripe patterns", shaderName: "saturdayTorus"),
         Shader(name: "Monterey Wannabe", description: "Layered landscape inspired by macOS Monterey wallpaper", shaderName: "montereyWannabe"),
+        Shader(name: "Circular Pattern Tiling", description: "Rotating star patterns in circular tiling arrangement", shaderName: "circularPatternTiling"),
     ]
 
     var body: some View {
