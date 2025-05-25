@@ -28,6 +28,7 @@ struct ContentView: View {
         Shader(name: "Circular Pattern Tiling", description: "Rotating star patterns in circular tiling arrangement", shaderName: "circularPatternTiling"),
         Shader(name: "Tunnel Rings", description: "Animated tunnel with rings of points moving toward viewer", shaderName: "tunnelRings"),
         Shader(name: "Layered Snow", description: "Beautiful layered snow effect with multiple depth layers", shaderName: "layeredSnow"),
+        Shader(name: "Desktop Wallpaper", description: "Space invaders pattern with animated effects and color transitions", shaderName: "desktopWallpaper"),
     ]
 
     var body: some View {
