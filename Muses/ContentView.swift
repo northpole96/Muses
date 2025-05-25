@@ -26,6 +26,7 @@ struct ContentView: View {
         Shader(name: "Saturday Torus", description: "Animated torus with black and white stripe patterns", shaderName: "saturdayTorus"),
         Shader(name: "Monterey Wannabe", description: "Layered landscape inspired by macOS Monterey wallpaper", shaderName: "montereyWannabe"),
         Shader(name: "Circular Pattern Tiling", description: "Rotating star patterns in circular tiling arrangement", shaderName: "circularPatternTiling"),
+        Shader(name: "Tunnel Rings", description: "Animated tunnel with rings of points moving toward viewer", shaderName: "tunnelRings"),
     ]
 
     var body: some View {
